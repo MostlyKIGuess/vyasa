@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vyasa - AI Text Analyzer</title>
+    <link rel="stylesheet" href="./static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Vyasa</h1>
+            <p class="subtitle">Analyze text for common AI writing patterns </p>
+        </header>
+
+        <main>
+            <section class="input-section">
+                <textarea
+                    id="textInput"
+                    placeholder="Paste any text here to analyze... (Ctrl+Enter to analyze)"
+                    rows="12"
+                ></textarea>
+                <div class="button-group">
+                    <button id="analyzeBtn">Analyze</button>
+                    <button id="clearBtn">Clear</button>
+                    <button id="sampleBtn">Load Sample</button>
+                </div>
+                <div class="limit-control">
+                    <label for="charLimit">Max text size:</label>
+                    <input type="range" id="charLimit" min="100000" max="5000000" step="100000" value="1000000">
+                    <span id="charLimitLabel">1M chars</span>
+                    <span class="limit-hint" id="charCount"></span>
+                </div>
+                <div id="loading" class="loading" style="display:none;">Analyzing...</div>
+            </section>
+
+            <section id="resultsSection" class="results-section" style="display:none;">
+                <div class="summary-card" id="summaryCard">
+                    <h3>Analysis Summary</h3>
+                    <p id="summaryText" class="summary-text"></p>
+                    <div class="stats-row">
+                        <span class="stat"><strong id="wordCount">0</strong> words</span>
+                        <span class="stat"><strong id="patternCount">0</strong> pattern types found</span>
+                        <span class="stat"><strong id="flaggedCount">0</strong> phrases flagged</span>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>Your Text - AI Traits Highlighted</h3>
+                    <div id="highlightedText" class="highlighted-text"></div>
+                    <div class="legend">
+                        <span class="legend-item"><span class="legend-color vocab"></span> AI Vocabulary</span>
+                        <span class="legend-item"><span class="legend-color structure"></span> Structural Pattern</span>
+                        <span class="legend-item"><span class="legend-color promo"></span> Promotional</span>
+                        <span class="legend-item"><span class="legend-color sig"></span> Significance/Legacy</span>
+                        <span class="legend-item"><span class="legend-color self-ref"></span> Self-Reference</span>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>What We Found</h3>
+                    <table class="breakdown-table">
+                        <thead>
+                            <tr>
+                                <th>Pattern</th>
+                                <th>Found</th>
+                                <th>What This Means</th>
+                            </tr>
+                        </thead>
+                        <tbody id="breakdownBody">
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="section" id="flaggedSection" style="display:none;">
+                    <h3>Flagged Items</h3>
+                    <div id="flaggedList" class="flagged-list"></div>
+                </div>
+
+                <div class="note">
+                    <p>These patterns are <em>indicators</em>, not proof! Can happen in human writing too. Do not assume AI authorship based solely on these findings.</p>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Based on <a href="https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing" target="_blank">Wikipedia: Signs of AI Writing</a></p>
+        </footer>
+    </div>
+
+    <script type="module" src="./static/app.js"></script>
+</body>
+</html>
