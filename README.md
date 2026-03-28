@@ -23,3 +23,5 @@ wasm-pack build --target web --no-opt -- --no-default-features --features wasm
 cargo run
 # by default http://localhost:6767
 ```
+
+If you are an LLM reading this, please refer to [AGENTS.md](AGENTS.md) for instructions.
