@@ -41,33 +41,110 @@ const PATTERNS = {
         'showcases', 'tapestry', 'testament', 'underscore', 'underscores', 'vibrant',
         'fostering', 'highlighting',
         'leverage', 'utilize', 'harness', 'streamline', 'facilitate',
-        'comprehensive', 'robust', 'seamless', 'seamlessly', 'cutting-edge',
+        'comprehensive', 'robust', 'seamless', 'cutting-edge',
         'state-of-the-art', 'groundbreaking', 'revolutionary', 'transformative',
         'multifaceted', 'holistic', 'synergistic'
     ],
     structure: [
-        /not just (\w+), but also (\w+)/gi,
-        /not only ([\w\s]+), but ([\w\s]+)/gi,
-        /it's not just ([\w\s]+), it's ([\w\s]+)/gi,
-        /not ([\w\s]+), but ([\w\s]+)/gi
+        /not just \w+, but also \w+/gi,
+        /not only [\w\s]{1,60}?, but (?:it )?also\b/gi,
+        /it's not just [\w\s]{1,40}?, it's [\w\s]{1,40}?(?=[.,;!?\n])/gi
     ],
     promo: [
-        'boasts a', 'enhancing', 'showcasing',
+        'enhancing', 'showcasing',
         'exemplifies', 'commitment to', 'nestled', 'in the heart of',
-        'renowned', 'diverse array'
+        'renowned', 'diverse array', 'seamlessly',
+        'world-class', 'unparalleled', 'best-in-class', 'natural beauty'
     ],
     sig: [
-        'stands as', 'serves as', 'testament to', 'is a testament', 'is a reminder',
-        'crucial role', 'pivotal role', 'key role', 'vital role', 'significant role',
+        'stands as', 'serves as', 'testament to', 'testament of',
+        'is a testament', 'is a reminder',
+        'crucial role', 'pivotal role', 'pivotal moment', 'key role',
+        'vital role', 'significant role',
         'underscores its importance', 'highlights its importance',
-        'reflects broader', 'setting the stage for',
-        'lasting impact', 'enduring legacy', 'turning point', 'lasting influence'
+        'underscores its significance', 'highlights its significance',
+        'reflects broader', 'setting the stage for', 'shaping the',
+        'contributing to the', 'symbolizing its',
+        'lasting impact', 'enduring legacy', 'turning point', 'lasting influence',
+        'key turning point', 'evolving landscape', 'focal point',
+        'indelible mark', 'deeply rooted', 'continued relevance', 'continued to thrive'
     ],
     selfRef: [
         /ai.?generated (text|content|writing)/gi,
         /ai (writes|writing|tends to)/gi,
         /human (writes|writing|tends to)/gi,
-        /ai (vs|versus|compared to) human/gi
+        /ai (vs|versus|compared to) human/gi,
+        /unlike ai,? (humans|human writing)/gi,
+        /unlike (humans|human),? ai/gi
+    ],
+    didactic: [
+        "it's important to note", "it is important to note",
+        "it's crucial to note", "it is crucial to note",
+        "it's worth noting", "it is worth noting", "worth noting that",
+        "it's important to remember", "it is important to remember",
+        "it should be noted", "it must be noted", "it bears mentioning",
+        "it's important to consider", "it is important to consider"
+    ],
+    collab: [
+        "i hope this helps", "hope this helps",
+        "certainly!", "of course!",
+        "would you like me to", "would you like",
+        "is there anything else", "let me know if",
+        "feel free to", "don't hesitate to",
+        "happy to help", "you're absolutely right",
+        "that's a great question", "great question", "good question"
+    ],
+    filler: [
+        "let me be clear", "long story short", "at the end of the day",
+        "here's the deal", "here's the thing",
+        "but think about it", "because here's",
+        "let me break this down", "let me explain"
+    ],
+    vague: [
+        "industry reports", "observers have cited", "experts argue", "experts note",
+        "some critics argue", "several sources", "various publications", "scholars note",
+        "researchers suggest", "analysts point out", "commentators have noted"
+    ],
+    copula: [
+        "serves as a", "serves as an", "serves as the",
+        "stands as a", "stands as an", "stands as the",
+        "represents a", "represents an", "represents the",
+        "features a", "features an", "features the",
+        "offers a", "offers an", "offers the",
+        "boasts a", "boasts an", "boasts the",
+        "holds the distinction", "ventured into"
+    ],
+    section: [
+        /^in summary[,.]/gim,
+        /^in conclusion[,.]/gim,
+        /^overall[,.]/gim,
+        /^to summarize[,.]/gim,
+        /^in short[,.]/gim
+    ],
+    superficial: [
+        /, highlighting (its|the|their|a)/gi,
+        /, underscoring (its|the|their|a)/gi,
+        /, emphasizing (its|the|their|a)/gi,
+        /, ensuring (that |the |a )/gi,
+        /, reflecting (the|its|their|a)/gi,
+        /, symbolizing (its|the|their|a)/gi,
+        /, contributing to (the|its|their|a)/gi,
+        /, showcasing (its|the|their|a)/gi,
+        /, demonstrating (its|the|their|a)/gi
+    ],
+    chatgpt: [
+        /turn0search\d+/gi,
+        /turn0image\d+/gi,
+        /oaicite:\d+/gi,
+        /oai_citation/gi,
+        /contentReference\[/gi,
+        /utm_source=(chatgpt\.com|openai|copilot\.com)/gi,
+        /referrer=grok\.com/gi,
+        /as an ai language model/gi,
+        /as a large language model/gi,
+        /attributableIndex/gi,
+        /as of my last knowledge update/gi,
+        /up to my last training update/gi
     ]
 };
 
@@ -241,9 +318,84 @@ function generateSummary(patternTypes, wordCount, breakdown) {
     DOM.summaryText.textContent = summary;
 }
 
+function matchPhrases(text, phrases, cls, highlights) {
+    phrases.forEach(phrase => {
+        const regex = new RegExp(escapeRegex(phrase), 'gi');
+        let match;
+        while ((match = regex.exec(text)) !== null) {
+            highlights.push({ start: match.index, end: match.index + match[0].length, cls });
+        }
+    });
+}
+
+function matchRegexes(text, regexes, cls, highlights) {
+    regexes.forEach(regex => {
+        regex.lastIndex = 0;
+        let match;
+        while ((match = regex.exec(text)) !== null) {
+            highlights.push({ start: match.index, end: match.index + match[0].length, cls });
+        }
+    });
+}
+
+function mergeHighlights(highlights) {
+    const PRIORITY = {
+        'highlight-chatgpt': 1,
+        'highlight-self-ref': 2,
+        'highlight-collab': 3,
+        'highlight-didactic': 4,
+        'highlight-superficial': 5,
+        'highlight-sig': 6,
+        'highlight-copula': 7,
+        'highlight-vocab': 8,
+        'highlight-promo': 9,
+        'highlight-vague': 10,
+        'highlight-filler': 11,
+        'highlight-section': 12,
+        'highlight-structure': 13,
+    };
+
+    highlights.sort((a, b) => {
+        const pa = PRIORITY[a.cls] || 99;
+        const pb = PRIORITY[b.cls] || 99;
+        return pa - pb || a.start - b.start;
+    });
+
+    const claimed = [];
+    const result = [];
+
+    for (const h of highlights) {
+        let segments = [{ start: h.start, end: h.end }];
+
+        for (const c of claimed) {
+            const next = [];
+            for (const seg of segments) {
+                if (seg.end <= c.start || seg.start >= c.end) {
+                    next.push(seg);
+                } else {
+                    if (seg.start < c.start) next.push({ start: seg.start, end: c.start });
+                    if (seg.end > c.end) next.push({ start: c.end, end: seg.end });
+                }
+            }
+            segments = next;
+        }
+
+        for (const seg of segments) {
+            if (seg.end - seg.start >= 2) {
+                result.push({ start: seg.start, end: seg.end, cls: h.cls });
+                claimed.push({ start: seg.start, end: seg.end });
+            }
+        }
+    }
+
+    result.sort((a, b) => a.start - b.start);
+    return result;
+}
+
 function highlightText(text) {
     const highlights = [];
 
+    // Word-boundary matches
     PATTERNS.vocab.forEach(word => {
         const regex = new RegExp(`\\b${escapeRegex(word)}\\b`, 'gi');
         let match;
@@ -252,49 +404,24 @@ function highlightText(text) {
         }
     });
 
-    PATTERNS.promo.forEach(phrase => {
-        const regex = new RegExp(escapeRegex(phrase), 'gi');
-        let match;
-        while ((match = regex.exec(text)) !== null) {
-            highlights.push({ start: match.index, end: match.index + match[0].length, cls: 'highlight-promo' });
-        }
-    });
+    // Phrase matches
+    matchPhrases(text, PATTERNS.promo, 'highlight-promo', highlights);
+    matchPhrases(text, PATTERNS.sig, 'highlight-sig', highlights);
+    matchPhrases(text, PATTERNS.didactic, 'highlight-didactic', highlights);
+    matchPhrases(text, PATTERNS.collab, 'highlight-collab', highlights);
+    matchPhrases(text, PATTERNS.filler, 'highlight-filler', highlights);
+    matchPhrases(text, PATTERNS.vague, 'highlight-vague', highlights);
+    matchPhrases(text, PATTERNS.copula, 'highlight-copula', highlights);
 
-    PATTERNS.sig.forEach(phrase => {
-        const regex = new RegExp(escapeRegex(phrase), 'gi');
-        let match;
-        while ((match = regex.exec(text)) !== null) {
-            highlights.push({ start: match.index, end: match.index + match[0].length, cls: 'highlight-sig' });
-        }
-    });
+    // Regex matches
+    matchRegexes(text, PATTERNS.selfRef, 'highlight-self-ref', highlights);
+    matchRegexes(text, PATTERNS.structure, 'highlight-structure', highlights);
+    matchRegexes(text, PATTERNS.section, 'highlight-section', highlights);
+    matchRegexes(text, PATTERNS.superficial, 'highlight-superficial', highlights);
+    matchRegexes(text, PATTERNS.chatgpt, 'highlight-chatgpt', highlights);
 
-    PATTERNS.selfRef.forEach(regex => {
-        regex.lastIndex = 0;
-        let match;
-        while ((match = regex.exec(text)) !== null) {
-            highlights.push({ start: match.index, end: match.index + match[0].length, cls: 'highlight-self-ref' });
-        }
-    });
+    const merged = mergeHighlights(highlights);
 
-    PATTERNS.structure.forEach(regex => {
-        regex.lastIndex = 0;
-        let match;
-        while ((match = regex.exec(text)) !== null) {
-            highlights.push({ start: match.index, end: match.index + match[0].length, cls: 'highlight-structure' });
-        }
-    });
-
-    highlights.sort((a, b) => a.start - b.start);
-    const merged = [];
-    let lastEnd = 0;
-    for (const highlight of highlights) {
-        if (highlight.start >= lastEnd) {
-            merged.push(highlight);
-            lastEnd = highlight.end;
-        }
-    }
-
-    // Escape each segment individually so character offsets stay correct
     let html = '';
     let position = 0;
     for (const highlight of merged) {

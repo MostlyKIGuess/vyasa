@@ -148,6 +148,14 @@ button:hover { background: #e5e5e5; }
 .highlight-promo { background: #c8e6c9; padding: 1px 2px; border-radius: 2px; }
 .highlight-sig { background: #b3e5fc; padding: 1px 2px; border-radius: 2px; }
 .highlight-self-ref { background: #e1bee7; padding: 1px 2px; border-radius: 2px; }
+.highlight-didactic { background: #ffe0b2; padding: 1px 2px; border-radius: 2px; }
+.highlight-collab { background: #f8bbd0; padding: 1px 2px; border-radius: 2px; }
+.highlight-filler { background: #d7ccc8; padding: 1px 2px; border-radius: 2px; }
+.highlight-vague { background: #b2dfdb; padding: 1px 2px; border-radius: 2px; }
+.highlight-copula { background: #c5cae9; padding: 1px 2px; border-radius: 2px; }
+.highlight-section { background: #dcedc8; padding: 1px 2px; border-radius: 2px; }
+.highlight-superficial { background: #f0f4c3; padding: 1px 2px; border-radius: 2px; }
+.highlight-chatgpt { background: #ef9a9a; padding: 1px 2px; border-radius: 2px; }
 
 .legend { margin-top: 10px; font-size: 13px; }
 .legend-item { display: inline-block; margin-right: 15px; }
@@ -164,6 +172,14 @@ button:hover { background: #e5e5e5; }
 .legend-color.promo { background: #c8e6c9; }
 .legend-color.sig { background: #b3e5fc; }
 .legend-color.self-ref { background: #e1bee7; }
+.legend-color.didactic { background: #ffe0b2; }
+.legend-color.collab { background: #f8bbd0; }
+.legend-color.filler { background: #d7ccc8; }
+.legend-color.vague { background: #b2dfdb; }
+.legend-color.copula { background: #c5cae9; }
+.legend-color.section { background: #dcedc8; }
+.legend-color.superficial { background: #f0f4c3; }
+.legend-color.chatgpt { background: #ef9a9a; }
 
 /* Flagged phrases */
 .flagged-list {
