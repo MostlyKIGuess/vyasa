@@ -403,13 +403,28 @@ pub fn collect_highlights(text: &str) -> Vec<Highlight> {
     push_regex_highlights(text, &SIGNIFICANCE_HIGHLIGHT_REGEX, "sig", &mut highlights);
     push_regex_highlights(text, &VAGUE_HIGHLIGHT_REGEX, "vague", &mut highlights);
     push_regex_highlights(text, &DIDACTIC_HIGHLIGHT_REGEX, "didactic", &mut highlights);
-    push_regex_highlights(text, &COLLABORATIVE_HIGHLIGHT_REGEX, "collab", &mut highlights);
+    push_regex_highlights(
+        text,
+        &COLLABORATIVE_HIGHLIGHT_REGEX,
+        "collab",
+        &mut highlights,
+    );
     push_regex_highlights(text, &COPULA_HIGHLIGHT_REGEX, "copula", &mut highlights);
-    push_regex_highlights(text, &NOTABILITY_HIGHLIGHT_REGEX, "notability", &mut highlights);
+    push_regex_highlights(
+        text,
+        &NOTABILITY_HIGHLIGHT_REGEX,
+        "notability",
+        &mut highlights,
+    );
 
     push_regex_list_highlights(text, &AI_SELF_REFERENCE, "self-ref", &mut highlights);
     push_regex_list_highlights(text, &SELF_REFERENTIAL, "self-ref", &mut highlights);
-    push_regex_list_highlights(text, &PHILOSOPHICAL_PATTERNS, "philosophical", &mut highlights);
+    push_regex_list_highlights(
+        text,
+        &PHILOSOPHICAL_PATTERNS,
+        "philosophical",
+        &mut highlights,
+    );
     push_regex_list_highlights(text, &TENDS_TO_PATTERNS, "tendsto", &mut highlights);
     push_regex_list_highlights(text, &CONTRAST_PATTERNS, "contrast", &mut highlights);
     push_regex_list_highlights(text, &GENERALIZATION_PATTERNS, "general", &mut highlights);
@@ -429,7 +444,12 @@ pub fn collect_highlights(text: &str) -> Vec<Highlight> {
     push_regex_list_highlights(text, &PLACEHOLDER_PATTERNS, "placeholder", &mut highlights);
     push_regex_list_highlights(text, &CHATGPT_ARTIFACT_PATTERNS, "chatgpt", &mut highlights);
     push_regex_list_highlights(text, &KNOWLEDGE_CUTOFF_PATTERNS, "cutoff", &mut highlights);
-    push_regex_list_highlights(text, &OUTLINE_CONCLUSION_PATTERNS, "outline", &mut highlights);
+    push_regex_list_highlights(
+        text,
+        &OUTLINE_CONCLUSION_PATTERNS,
+        "outline",
+        &mut highlights,
+    );
 
     push_regex_highlights(text, &EMOJI_REGEX, "emoji", &mut highlights);
 
