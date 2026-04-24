@@ -1,3 +1,4 @@
+use crate::indicators::collect_highlights;
 use crate::models::{DetectionResult, DetectorConfig, IndicatorBreakdown};
 use std::collections::{HashMap, HashSet};
 
@@ -261,12 +262,15 @@ pub fn create_detection_result(
         ));
     }
 
+    let highlights = collect_highlights(text);
+
     DetectionResult {
         score,
         confidence,
         likely_ai_generated,
         breakdown,
         flagged_phrases: cleaned_phrases,
+        highlights,
         word_count,
     }
 }

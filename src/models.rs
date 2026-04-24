@@ -41,12 +41,20 @@ pub struct IndicatorBreakdown {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct Highlight {
+    pub start: usize,
+    pub end: usize,
+    pub category: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct DetectionResult {
     pub score: f64,
     pub confidence: String,
     pub likely_ai_generated: bool,
     pub breakdown: IndicatorBreakdown,
     pub flagged_phrases: Vec<String>,
+    pub highlights: Vec<Highlight>,
     pub word_count: usize,
 }
 

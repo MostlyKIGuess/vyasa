@@ -143,43 +143,81 @@ button:hover { background: #e5e5e5; }
     overflow-y: auto;
 }
 
-.highlight-vocab { background: #ffcdd2; padding: 1px 2px; border-radius: 2px; }
-.highlight-structure { background: #fff9c4; padding: 1px 2px; border-radius: 2px; }
-.highlight-promo { background: #c8e6c9; padding: 1px 2px; border-radius: 2px; }
-.highlight-sig { background: #b3e5fc; padding: 1px 2px; border-radius: 2px; }
-.highlight-self-ref { background: #e1bee7; padding: 1px 2px; border-radius: 2px; }
-.highlight-didactic { background: #ffe0b2; padding: 1px 2px; border-radius: 2px; }
-.highlight-collab { background: #f8bbd0; padding: 1px 2px; border-radius: 2px; }
-.highlight-filler { background: #d7ccc8; padding: 1px 2px; border-radius: 2px; }
-.highlight-vague { background: #b2dfdb; padding: 1px 2px; border-radius: 2px; }
-.highlight-copula { background: #c5cae9; padding: 1px 2px; border-radius: 2px; }
-.highlight-section { background: #dcedc8; padding: 1px 2px; border-radius: 2px; }
-.highlight-superficial { background: #f0f4c3; padding: 1px 2px; border-radius: 2px; }
-.highlight-chatgpt { background: #ef9a9a; padding: 1px 2px; border-radius: 2px; }
+.highlight {
+    padding: 1px 2px;
+    border-radius: 2px;
+    cursor: help;
+}
 
-.legend { margin-top: 10px; font-size: 13px; }
-.legend-item { display: inline-block; margin-right: 15px; }
+.highlight-vocab        { background: #ffcdd2; }
+.highlight-structure    { background: #fff9c4; }
+.highlight-promo        { background: #c8e6c9; }
+.highlight-sig          { background: #b3e5fc; }
+.highlight-self-ref     { background: #e1bee7; }
+.highlight-didactic     { background: #ffe0b2; }
+.highlight-collab       { background: #f8bbd0; }
+.highlight-filler       { background: #d7ccc8; }
+.highlight-vague        { background: #b2dfdb; }
+.highlight-copula       { background: #c5cae9; }
+.highlight-section      { background: #dcedc8; }
+.highlight-superficial  { background: #f0f4c3; }
+.highlight-chatgpt      { background: #ef9a9a; color: #b71c1c; font-weight: 600; }
+.highlight-placeholder  { background: #ff8a80; color: #b71c1c; font-weight: 600; }
+.highlight-cutoff       { background: #ffab91; color: #bf360c; font-weight: 600; }
+.highlight-philosophical{ background: #d1c4e9; }
+.highlight-tendsto      { background: #ffecb3; }
+.highlight-contrast     { background: #cfd8dc; }
+.highlight-general      { background: #f5f5f5; border: 1px dashed #bbb; }
+.highlight-notability   { background: #b39ddb; }
+.highlight-outline      { background: #ffe082; }
+.highlight-emoji        { background: #fff59d; outline: 1px dotted #fbc02d; }
+
+.legend {
+    margin-top: 12px;
+    font-size: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+}
+
+.legend-item {
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    color: #555;
+}
+
 .legend-color {
     display: inline-block;
     width: 12px;
     height: 12px;
     border-radius: 2px;
-    margin-right: 4px;
+    margin-right: 5px;
     vertical-align: middle;
 }
-.legend-color.vocab { background: #ffcdd2; }
-.legend-color.structure { background: #fff9c4; }
-.legend-color.promo { background: #c8e6c9; }
-.legend-color.sig { background: #b3e5fc; }
-.legend-color.self-ref { background: #e1bee7; }
-.legend-color.didactic { background: #ffe0b2; }
-.legend-color.collab { background: #f8bbd0; }
-.legend-color.filler { background: #d7ccc8; }
-.legend-color.vague { background: #b2dfdb; }
-.legend-color.copula { background: #c5cae9; }
-.legend-color.section { background: #dcedc8; }
-.legend-color.superficial { background: #f0f4c3; }
-.legend-color.chatgpt { background: #ef9a9a; }
+
+.legend-color.vocab         { background: #ffcdd2; }
+.legend-color.structure     { background: #fff9c4; }
+.legend-color.promo         { background: #c8e6c9; }
+.legend-color.sig           { background: #b3e5fc; }
+.legend-color.self-ref      { background: #e1bee7; }
+.legend-color.didactic      { background: #ffe0b2; }
+.legend-color.collab        { background: #f8bbd0; }
+.legend-color.filler        { background: #d7ccc8; }
+.legend-color.vague         { background: #b2dfdb; }
+.legend-color.copula        { background: #c5cae9; }
+.legend-color.section       { background: #dcedc8; }
+.legend-color.superficial   { background: #f0f4c3; }
+.legend-color.chatgpt       { background: #ef9a9a; }
+.legend-color.placeholder   { background: #ff8a80; }
+.legend-color.cutoff        { background: #ffab91; }
+.legend-color.philosophical { background: #d1c4e9; }
+.legend-color.tendsto       { background: #ffecb3; }
+.legend-color.contrast      { background: #cfd8dc; }
+.legend-color.general       { background: #f5f5f5; border: 1px dashed #bbb; }
+.legend-color.notability    { background: #b39ddb; }
+.legend-color.outline       { background: #ffe082; }
+.legend-color.emoji         { background: #fff59d; outline: 1px dotted #fbc02d; }
 
 /* Flagged phrases */
 .flagged-list {

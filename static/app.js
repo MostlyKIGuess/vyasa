@@ -33,119 +33,33 @@ Experts argue that the Renaissance represents a crucial turning point in Western
 
 In conclusion, the Renaissance serves as a reminder of humanity's capacity for creative and intellectual achievement, setting the stage for the modern world.`;
 
-const PATTERNS = {
-    vocab: [
-        'additionally', 'boasts', 'bolstered', 'crucial', 'delve', 'emphasizing',
-        'enduring', 'garner', 'intricate', 'intricacies', 'interplay',
-        'landscape', 'meticulous', 'meticulously', 'pivotal', 'showcase',
-        'showcases', 'tapestry', 'testament', 'underscore', 'underscores', 'vibrant',
-        'fostering', 'highlighting',
-        'leverage', 'utilize', 'harness', 'streamline', 'facilitate',
-        'comprehensive', 'robust', 'seamless', 'cutting-edge',
-        'state-of-the-art', 'groundbreaking', 'revolutionary', 'transformative',
-        'multifaceted', 'holistic', 'synergistic'
-    ],
-    structure: [
-        /not just \w+, but also \w+/gi,
-        /not only [\w\s]{1,60}?, but (?:it )?also\b/gi,
-        /it's not just [\w\s]{1,40}?, it's [\w\s]{1,40}?(?=[.,;!?\n])/gi
-    ],
-    promo: [
-        'enhancing', 'showcasing',
-        'exemplifies', 'commitment to', 'nestled', 'in the heart of',
-        'renowned', 'diverse array', 'seamlessly',
-        'world-class', 'unparalleled', 'best-in-class', 'natural beauty'
-    ],
-    sig: [
-        'stands as', 'serves as', 'testament to', 'testament of',
-        'is a testament', 'is a reminder',
-        'crucial role', 'pivotal role', 'pivotal moment', 'key role',
-        'vital role', 'significant role',
-        'underscores its importance', 'highlights its importance',
-        'underscores its significance', 'highlights its significance',
-        'reflects broader', 'setting the stage for', 'shaping the',
-        'contributing to the', 'symbolizing its',
-        'lasting impact', 'enduring legacy', 'turning point', 'lasting influence',
-        'key turning point', 'evolving landscape', 'focal point',
-        'indelible mark', 'deeply rooted', 'continued relevance', 'continued to thrive'
-    ],
-    selfRef: [
-        /ai.?generated (text|content|writing)/gi,
-        /ai (writes|writing|tends to)/gi,
-        /human (writes|writing|tends to)/gi,
-        /ai (vs|versus|compared to) human/gi,
-        /unlike ai,? (humans|human writing)/gi,
-        /unlike (humans|human),? ai/gi
-    ],
-    didactic: [
-        "it's important to note", "it is important to note",
-        "it's crucial to note", "it is crucial to note",
-        "it's worth noting", "it is worth noting", "worth noting that",
-        "it's important to remember", "it is important to remember",
-        "it should be noted", "it must be noted", "it bears mentioning",
-        "it's important to consider", "it is important to consider"
-    ],
-    collab: [
-        "i hope this helps", "hope this helps",
-        "certainly!", "of course!",
-        "would you like me to", "would you like",
-        "is there anything else", "let me know if",
-        "feel free to", "don't hesitate to",
-        "happy to help", "you're absolutely right",
-        "that's a great question", "great question", "good question"
-    ],
-    filler: [
-        "let me be clear", "long story short", "at the end of the day",
-        "here's the deal", "here's the thing",
-        "but think about it", "because here's",
-        "let me break this down", "let me explain"
-    ],
-    vague: [
-        "industry reports", "observers have cited", "experts argue", "experts note",
-        "some critics argue", "several sources", "various publications", "scholars note",
-        "researchers suggest", "analysts point out", "commentators have noted"
-    ],
-    copula: [
-        "serves as a", "serves as an", "serves as the",
-        "stands as a", "stands as an", "stands as the",
-        "represents a", "represents an", "represents the",
-        "features a", "features an", "features the",
-        "offers a", "offers an", "offers the",
-        "boasts a", "boasts an", "boasts the",
-        "holds the distinction", "ventured into"
-    ],
-    section: [
-        /^in summary[,.]/gim,
-        /^in conclusion[,.]/gim,
-        /^overall[,.]/gim,
-        /^to summarize[,.]/gim,
-        /^in short[,.]/gim
-    ],
-    superficial: [
-        /, highlighting (its|the|their|a)/gi,
-        /, underscoring (its|the|their|a)/gi,
-        /, emphasizing (its|the|their|a)/gi,
-        /, ensuring (that |the |a )/gi,
-        /, reflecting (the|its|their|a)/gi,
-        /, symbolizing (its|the|their|a)/gi,
-        /, contributing to (the|its|their|a)/gi,
-        /, showcasing (its|the|their|a)/gi,
-        /, demonstrating (its|the|their|a)/gi
-    ],
-    chatgpt: [
-        /turn0search\d+/gi,
-        /turn0image\d+/gi,
-        /oaicite:\d+/gi,
-        /oai_citation/gi,
-        /contentReference\[/gi,
-        /utm_source=(chatgpt\.com|openai|copilot\.com)/gi,
-        /referrer=grok\.com/gi,
-        /as an ai language model/gi,
-        /as a large language model/gi,
-        /attributableIndex/gi,
-        /as of my last knowledge update/gi,
-        /up to my last training update/gi
-    ]
+// Highlight category → human-readable label, used for hover tooltips on the
+// rendered spans. The categories themselves are emitted by the Rust
+// `collect_highlights` function so that the wordlists/patterns live in one
+// place only. Keep this map in sync with the categories produced there.
+const CATEGORY_LABELS = {
+    vocab: 'AI vocabulary',
+    promo: 'Promotional language',
+    sig: 'Significance / legacy emphasis',
+    didactic: 'Didactic disclaimer',
+    collab: 'Collaborative communication',
+    filler: 'Conversational filler',
+    vague: 'Vague attribution',
+    copula: 'Copula avoidance',
+    notability: 'Notability emphasis',
+    'self-ref': 'Self-reference / AI self-reference',
+    philosophical: 'Philosophical pattern',
+    tendsto: '"Tends to" pattern',
+    contrast: 'Contrast / hedging',
+    general: 'Generalization about AI/humans',
+    structure: 'Negative-parallelism structure',
+    superficial: 'Superficial -ing analysis',
+    section: 'Section summary',
+    placeholder: 'Placeholder text',
+    chatgpt: 'ChatGPT artifact',
+    cutoff: 'Knowledge-cutoff disclaimer',
+    outline: 'Outline-like conclusion',
+    emoji: 'Emoji'
 };
 
 DOM.analyzeBtn.addEventListener('click', analyzeText);
@@ -230,7 +144,7 @@ async function analyzeText() {
 }
 
 function displayResults(result, originalText) {
-    const { breakdown, flagged_phrases, word_count } = result;
+    const { breakdown, flagged_phrases, highlights, word_count } = result;
 
     DOM.resultsSection.style.display = 'block';
     DOM.wordCount.textContent = word_count;
@@ -240,7 +154,7 @@ function displayResults(result, originalText) {
     DOM.flaggedCount.textContent = flagged_phrases ? flagged_phrases.length : 0;
 
     generateSummary(patternTypes, word_count, breakdown);
-    highlightText(originalText);
+    highlightText(originalText, highlights || []);
     populateBreakdown(breakdown);
     populateFlaggedPhrases(flagged_phrases);
 
@@ -318,73 +232,78 @@ function generateSummary(patternTypes, wordCount, breakdown) {
     DOM.summaryText.textContent = summary;
 }
 
-function matchPhrases(text, phrases, cls, highlights) {
-    phrases.forEach(phrase => {
-        const regex = new RegExp(escapeRegex(phrase), 'gi');
-        let match;
-        while ((match = regex.exec(text)) !== null) {
-            highlights.push({ start: match.index, end: match.index + match[0].length, cls });
-        }
-    });
-}
-
-function matchRegexes(text, regexes, cls, highlights) {
-    regexes.forEach(regex => {
-        regex.lastIndex = 0;
-        let match;
-        while ((match = regex.exec(text)) !== null) {
-            highlights.push({ start: match.index, end: match.index + match[0].length, cls });
-        }
-    });
-}
+// Severity priority for resolving overlaps when two patterns claim the same
+// span — definitive/strong indicators win over moderate/mild ones so the
+// reader sees the most informative label.
+const HIGHLIGHT_PRIORITY = {
+    chatgpt: 1,
+    placeholder: 2,
+    cutoff: 3,
+    'self-ref': 4,
+    collab: 5,
+    didactic: 6,
+    superficial: 7,
+    sig: 8,
+    copula: 9,
+    notability: 10,
+    vocab: 11,
+    promo: 12,
+    vague: 13,
+    filler: 14,
+    outline: 15,
+    section: 16,
+    structure: 17,
+    contrast: 18,
+    general: 19,
+    tendsto: 20,
+    philosophical: 21,
+    emoji: 22
+};
 
 function mergeHighlights(highlights) {
-    const PRIORITY = {
-        'highlight-chatgpt': 1,
-        'highlight-self-ref': 2,
-        'highlight-collab': 3,
-        'highlight-didactic': 4,
-        'highlight-superficial': 5,
-        'highlight-sig': 6,
-        'highlight-copula': 7,
-        'highlight-vocab': 8,
-        'highlight-promo': 9,
-        'highlight-vague': 10,
-        'highlight-filler': 11,
-        'highlight-section': 12,
-        'highlight-structure': 13,
-    };
-
-    highlights.sort((a, b) => {
-        const pa = PRIORITY[a.cls] || 99;
-        const pb = PRIORITY[b.cls] || 99;
-        return pa - pb || a.start - b.start;
+    const sorted = highlights.slice().sort((a, b) => {
+        const priorityA = HIGHLIGHT_PRIORITY[a.category] || 99;
+        const priorityB = HIGHLIGHT_PRIORITY[b.category] || 99;
+        if (priorityA !== priorityB) return priorityA - priorityB;
+        if (a.start !== b.start) return a.start - b.start;
+        return (b.end - b.start) - (a.end - a.start);
     });
 
     const claimed = [];
     const result = [];
 
-    for (const h of highlights) {
-        let segments = [{ start: h.start, end: h.end }];
+    for (const highlight of sorted) {
+        if (highlight.end <= highlight.start) continue;
 
-        for (const c of claimed) {
+        let segments = [{ start: highlight.start, end: highlight.end }];
+        for (const claim of claimed) {
             const next = [];
-            for (const seg of segments) {
-                if (seg.end <= c.start || seg.start >= c.end) {
-                    next.push(seg);
+            for (const segment of segments) {
+                if (segment.end <= claim.start || segment.start >= claim.end) {
+                    next.push(segment);
                 } else {
-                    if (seg.start < c.start) next.push({ start: seg.start, end: c.start });
-                    if (seg.end > c.end) next.push({ start: c.end, end: seg.end });
+                    if (segment.start < claim.start) {
+                        next.push({ start: segment.start, end: claim.start });
+                    }
+                    if (segment.end > claim.end) {
+                        next.push({ start: claim.end, end: segment.end });
+                    }
                 }
             }
             segments = next;
+            if (segments.length === 0) break;
         }
 
-        for (const seg of segments) {
-            if (seg.end - seg.start >= 2) {
-                result.push({ start: seg.start, end: seg.end, cls: h.cls });
-                claimed.push({ start: seg.start, end: seg.end });
-            }
+        for (const segment of segments) {
+            // Skip slivers that would render as empty/blank spans after
+            // overlap subtraction (e.g. a single trailing comma).
+            if (segment.end - segment.start < 1) continue;
+            result.push({
+                start: segment.start,
+                end: segment.end,
+                category: highlight.category
+            });
+            claimed.push({ start: segment.start, end: segment.end });
         }
     }
 
@@ -392,44 +311,29 @@ function mergeHighlights(highlights) {
     return result;
 }
 
-function highlightText(text) {
-    const highlights = [];
-
-    // Word-boundary matches
-    PATTERNS.vocab.forEach(word => {
-        const regex = new RegExp(`\\b${escapeRegex(word)}\\b`, 'gi');
-        let match;
-        while ((match = regex.exec(text)) !== null) {
-            highlights.push({ start: match.index, end: match.index + match[0].length, cls: 'highlight-vocab' });
-        }
-    });
-
-    // Phrase matches
-    matchPhrases(text, PATTERNS.promo, 'highlight-promo', highlights);
-    matchPhrases(text, PATTERNS.sig, 'highlight-sig', highlights);
-    matchPhrases(text, PATTERNS.didactic, 'highlight-didactic', highlights);
-    matchPhrases(text, PATTERNS.collab, 'highlight-collab', highlights);
-    matchPhrases(text, PATTERNS.filler, 'highlight-filler', highlights);
-    matchPhrases(text, PATTERNS.vague, 'highlight-vague', highlights);
-    matchPhrases(text, PATTERNS.copula, 'highlight-copula', highlights);
-
-    // Regex matches
-    matchRegexes(text, PATTERNS.selfRef, 'highlight-self-ref', highlights);
-    matchRegexes(text, PATTERNS.structure, 'highlight-structure', highlights);
-    matchRegexes(text, PATTERNS.section, 'highlight-section', highlights);
-    matchRegexes(text, PATTERNS.superficial, 'highlight-superficial', highlights);
-    matchRegexes(text, PATTERNS.chatgpt, 'highlight-chatgpt', highlights);
+function highlightText(text, highlights) {
+    if (!highlights || highlights.length === 0) {
+        DOM.highlightedText.textContent = text;
+        return;
+    }
 
     const merged = mergeHighlights(highlights);
 
     let html = '';
     let position = 0;
     for (const highlight of merged) {
-        html += escapeHtml(text.substring(position, highlight.start));
-        html += `<span class="${highlight.cls}">${escapeHtml(text.substring(highlight.start, highlight.end))}</span>`;
+        if (highlight.start < position) continue;
+        if (highlight.start > position) {
+            html += escapeHtml(text.substring(position, highlight.start));
+        }
+        const label = CATEGORY_LABELS[highlight.category] || highlight.category;
+        const slice = text.substring(highlight.start, highlight.end);
+        html += `<span class="highlight highlight-${highlight.category}" title="${escapeHtml(label)}">${escapeHtml(slice)}</span>`;
         position = highlight.end;
     }
-    html += escapeHtml(text.substring(position));
+    if (position < text.length) {
+        html += escapeHtml(text.substring(position));
+    }
 
     DOM.highlightedText.innerHTML = html;
 }
@@ -517,8 +421,4 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
-}
-
-function escapeRegex(string) {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

@@ -1,4 +1,4 @@
-use crate::models::IndicatorBreakdown;
+use crate::models::{Highlight, IndicatorBreakdown};
 use regex::Regex;
 use std::collections::HashSet;
 
@@ -16,6 +16,11 @@ lazy_static::lazy_static! {
         "comprehensive", "robust", "seamless", "cutting-edge", "state-of-the-art",
         "groundbreaking", "revolutionary", "transformative",
         "multifaceted", "holistic", "synergistic",
+        // Generative-AI marketing-copy buzzwords
+        "coherent", "contextually", "nuanced", "elevate",
+        "navigate", "embark", "dive", "unveil", "unlock",
+        "myriad", "plethora", "paramount", "quintessential",
+        "captivat", "compelling", "engaging",
     ].into_iter().collect();
 
     static ref PROMOTIONAL_WORDS: HashSet<&'static str> = [
@@ -23,6 +28,9 @@ lazy_static::lazy_static! {
         "exemplifies", "commitment to", "natural beauty", "nestled", "in the heart of",
         "renowned", "diverse array", "seamlessly",
         "world-class", "unparalleled", "best-in-class",
+        "a wide range of", "a range of", "a tool for", "a suite of",
+        "wide variety of", "rich tapestry of",
+        "in today's fast-paced",
     ].into_iter().collect();
 
     // Only include phrases that are distinctly AI-like, not normal human speech
@@ -61,6 +69,19 @@ lazy_static::lazy_static! {
         Regex::new(r"(?i)ai (vs|versus|compared to) human").expect("valid regex"),
         Regex::new(r"(?i)unlike ai,? (humans|human writing)").expect("valid regex"),
         Regex::new(r"(?i)unlike (humans|human),? ai").expect("valid regex"),
+        // Generative-AI self-disclosure: text describing "an AI X" where X is
+        // a tool/role keyword. Catches marketing copy about generators, models,
+        // assistants, chatbots, etc.
+        Regex::new(r"(?i)\ban ai (generator|model|chatbot|assistant|tool|writer|helper)\b")
+            .expect("valid regex"),
+        Regex::new(r"(?i)\bai (generator|chatbot|assistant|writer|helper)s?\b")
+            .expect("valid regex"),
+        Regex::new(r"(?i)\b(?:large )?language models?\b").expect("valid regex"),
+        Regex::new(r"(?i)\bllms?\b").expect("valid regex"),
+        Regex::new(r"(?i)transformer.based").expect("valid regex"),
+        Regex::new(r"(?i)\bgpt-?\d?\b").expect("valid regex"),
+        Regex::new(r"(?i)\bneural network[s]?\b").expect("valid regex"),
+        Regex::new(r"(?i)\bdeep learning\b").expect("valid regex"),
     ];
 
     static ref TENDS_TO_PATTERNS: Vec<Regex> = vec![
@@ -211,12 +232,15 @@ lazy_static::lazy_static! {
 
     static ref COPULA_AVOIDANCE: HashSet<&'static str> = [
         "serves as a", "serves as an", "serves as the",
+        "serve as a", "serve as an", "serve as the",
+        "can serve as", "may serve as",
         "stands as a", "stands as an", "stands as the",
         "marks a", "marks an", "marks the",
         "represents a", "represents an", "represents the",
         "features a", "features an", "features the",
         "offers a", "offers an", "offers the",
         "boasts a", "boasts an", "boasts the",
+        "provides a", "provides an", "provides the",
         "holds the distinction", "ventured into",
     ].into_iter().collect();
 
@@ -242,36 +266,198 @@ lazy_static::lazy_static! {
     static ref EMOJI_REGEX: Regex = Regex::new(
         r"[\x{1F300}-\x{1F9FF}\x{2600}-\x{26FF}\x{2700}-\x{27BF}\x{FE00}-\x{FE0F}\x{1FA00}-\x{1FA6F}\x{1FA70}-\x{1FAFF}]"
     ).expect("valid regex");
+
+    // Combined regexes for highlight collection. These reuse the same phrase/regex
+    // sources as the count-functions but produce byte ranges instead of just counts.
+    // Word boundaries are added per-phrase based on whether the phrase starts/ends
+    // with a word character — this avoids matches like "marks a" inside "remarks are"
+    // and also avoids dropping matches for phrases ending in punctuation like "Certainly!".
+    static ref VOCAB_HIGHLIGHT_REGEX: Regex =
+        build_vocab_highlight_regex(AI_VOCAB.iter().copied());
+    static ref PROMOTIONAL_HIGHLIGHT_REGEX: Regex = {
+        let extra_hype = ["exciting", "innovative", "cutting-edge", "state-of-the-art", "revolutionary"];
+        build_phrase_highlight_regex(
+            PROMOTIONAL_WORDS.iter().copied().chain(extra_hype.iter().copied()),
+        )
+    };
+    static ref FILLER_HIGHLIGHT_REGEX: Regex =
+        build_phrase_highlight_regex(CONVERSATIONAL_FILLER.iter().copied());
+    static ref SIGNIFICANCE_HIGHLIGHT_REGEX: Regex =
+        build_phrase_highlight_regex(SIGNIFICANCE_PHRASES.iter().copied());
+    static ref VAGUE_HIGHLIGHT_REGEX: Regex =
+        build_phrase_highlight_regex(VAGUE_ATTRIBUTIONS.iter().copied());
+    static ref DIDACTIC_HIGHLIGHT_REGEX: Regex =
+        build_phrase_highlight_regex(DIDACTIC_DISCLAIMERS.iter().copied());
+    static ref COLLABORATIVE_HIGHLIGHT_REGEX: Regex =
+        build_phrase_highlight_regex(COLLABORATIVE_COMM.iter().copied());
+    static ref COPULA_HIGHLIGHT_REGEX: Regex =
+        build_phrase_highlight_regex(COPULA_AVOIDANCE.iter().copied());
+    static ref NOTABILITY_HIGHLIGHT_REGEX: Regex =
+        build_phrase_highlight_regex(NOTABILITY_EMPHASIS.iter().copied());
+}
+
+fn build_vocab_highlight_regex(words: impl Iterator<Item = &'static str>) -> Regex {
+    // Stem-style matching: `\bword\w*\b` matches the base word and common
+    // inflections (showcase → showcases/showcased/showcasing) without exploding
+    // the source vocab list.
+    let alternatives: Vec<String> = words
+        .map(|word| format!("{}\\w*", regex::escape(word)))
+        .collect();
+    Regex::new(&format!(r"(?i)\b(?:{})\b", alternatives.join("|")))
+        .expect("valid combined vocab regex")
+}
+
+fn build_phrase_highlight_regex(phrases: impl Iterator<Item = &'static str>) -> Regex {
+    let alternatives: Vec<String> = phrases
+        .map(|phrase| {
+            let escaped = regex::escape(phrase);
+            let starts_with_word = phrase
+                .chars()
+                .next()
+                .is_some_and(|character| character.is_alphanumeric() || character == '_');
+            let ends_with_word = phrase
+                .chars()
+                .last()
+                .is_some_and(|character| character.is_alphanumeric() || character == '_');
+            let mut pattern = String::new();
+            if starts_with_word {
+                pattern.push_str(r"\b");
+            }
+            pattern.push_str(&escaped);
+            if ends_with_word {
+                pattern.push_str(r"\b");
+            }
+            pattern
+        })
+        .collect();
+    Regex::new(&format!(r"(?i)(?:{})", alternatives.join("|")))
+        .expect("valid combined phrase regex")
+}
+
+fn push_regex_highlights(
+    text: &str,
+    regex: &Regex,
+    category: &str,
+    highlights: &mut Vec<Highlight>,
+) {
+    for matched in regex.find_iter(text) {
+        highlights.push(Highlight {
+            start: matched.start(),
+            end: matched.end(),
+            category: category.to_string(),
+        });
+    }
+}
+
+fn push_regex_list_highlights(
+    text: &str,
+    regexes: &[Regex],
+    category: &str,
+    highlights: &mut Vec<Highlight>,
+) {
+    for regex in regexes {
+        push_regex_highlights(text, regex, category, highlights);
+    }
+}
+
+/// Convert byte offsets in `highlights` to UTF-16 code unit offsets so that the
+/// JavaScript renderer (whose `String.prototype.substring` is UTF-16-indexed)
+/// can splice the original text correctly even when it contains multi-byte
+/// characters such as emoji.
+fn convert_byte_offsets_to_utf16(text: &str, highlights: &mut [Highlight]) {
+    if highlights.is_empty() {
+        return;
+    }
+
+    let mut offset_pairs: Vec<(usize, &mut usize)> = Vec::with_capacity(highlights.len() * 2);
+    for highlight in highlights.iter_mut() {
+        offset_pairs.push((highlight.start, &mut highlight.start));
+        offset_pairs.push((highlight.end, &mut highlight.end));
+    }
+    offset_pairs.sort_by_key(|(byte_offset, _)| *byte_offset);
+
+    let mut current_byte = 0usize;
+    let mut current_utf16 = 0usize;
+    let mut chars = text.char_indices().peekable();
+
+    for (target_byte, target_slot) in offset_pairs {
+        while current_byte < target_byte {
+            match chars.next() {
+                Some((byte_index, character)) => {
+                    current_byte = byte_index + character.len_utf8();
+                    current_utf16 += character.len_utf16();
+                }
+                None => break,
+            }
+        }
+        *target_slot = current_utf16;
+    }
+}
+
+pub fn collect_highlights(text: &str) -> Vec<Highlight> {
+    let mut highlights = Vec::new();
+
+    push_regex_highlights(text, &VOCAB_HIGHLIGHT_REGEX, "vocab", &mut highlights);
+    push_regex_highlights(text, &PROMOTIONAL_HIGHLIGHT_REGEX, "promo", &mut highlights);
+    push_regex_highlights(text, &FILLER_HIGHLIGHT_REGEX, "filler", &mut highlights);
+    push_regex_highlights(text, &SIGNIFICANCE_HIGHLIGHT_REGEX, "sig", &mut highlights);
+    push_regex_highlights(text, &VAGUE_HIGHLIGHT_REGEX, "vague", &mut highlights);
+    push_regex_highlights(text, &DIDACTIC_HIGHLIGHT_REGEX, "didactic", &mut highlights);
+    push_regex_highlights(text, &COLLABORATIVE_HIGHLIGHT_REGEX, "collab", &mut highlights);
+    push_regex_highlights(text, &COPULA_HIGHLIGHT_REGEX, "copula", &mut highlights);
+    push_regex_highlights(text, &NOTABILITY_HIGHLIGHT_REGEX, "notability", &mut highlights);
+
+    push_regex_list_highlights(text, &AI_SELF_REFERENCE, "self-ref", &mut highlights);
+    push_regex_list_highlights(text, &SELF_REFERENTIAL, "self-ref", &mut highlights);
+    push_regex_list_highlights(text, &PHILOSOPHICAL_PATTERNS, "philosophical", &mut highlights);
+    push_regex_list_highlights(text, &TENDS_TO_PATTERNS, "tendsto", &mut highlights);
+    push_regex_list_highlights(text, &CONTRAST_PATTERNS, "contrast", &mut highlights);
+    push_regex_list_highlights(text, &GENERALIZATION_PATTERNS, "general", &mut highlights);
+    push_regex_list_highlights(
+        text,
+        &NEGATIVE_PARALLELISM_PATTERNS,
+        "structure",
+        &mut highlights,
+    );
+    push_regex_list_highlights(
+        text,
+        &SUPERFICIAL_ING_PATTERNS,
+        "superficial",
+        &mut highlights,
+    );
+    push_regex_list_highlights(text, &SECTION_SUMMARY_PATTERNS, "section", &mut highlights);
+    push_regex_list_highlights(text, &PLACEHOLDER_PATTERNS, "placeholder", &mut highlights);
+    push_regex_list_highlights(text, &CHATGPT_ARTIFACT_PATTERNS, "chatgpt", &mut highlights);
+    push_regex_list_highlights(text, &KNOWLEDGE_CUTOFF_PATTERNS, "cutoff", &mut highlights);
+    push_regex_list_highlights(text, &OUTLINE_CONCLUSION_PATTERNS, "outline", &mut highlights);
+
+    push_regex_highlights(text, &EMOJI_REGEX, "emoji", &mut highlights);
+
+    convert_byte_offsets_to_utf16(text, &mut highlights);
+
+    highlights
+}
+
+fn count_and_collect(text: &str, regex: &Regex) -> (usize, Vec<String>) {
+    let mut count = 0;
+    let mut flagged = Vec::new();
+    let mut seen = HashSet::new();
+    for matched in regex.find_iter(text) {
+        count += 1;
+        let lowered = matched.as_str().to_lowercase();
+        if seen.insert(lowered.clone()) {
+            flagged.push(lowered);
+        }
+    }
+    (count, flagged)
 }
 
 pub fn check_ai_vocabulary(text: &str) -> (usize, Vec<String>) {
-    let lower_text = text.to_lowercase();
-    let mut count = 0;
-    let mut flagged = Vec::new();
-
-    for word in AI_VOCAB.iter() {
-        if lower_text.contains(word) {
-            count += lower_text.matches(word).count();
-            flagged.push(word.to_string());
-        }
-    }
-
-    (count, flagged)
+    count_and_collect(text, &VOCAB_HIGHLIGHT_REGEX)
 }
 
 pub fn check_conversational_filler(text: &str) -> (usize, Vec<String>) {
-    let lower_text = text.to_lowercase();
-    let mut count = 0;
-    let mut flagged = Vec::new();
-
-    for phrase in CONVERSATIONAL_FILLER.iter() {
-        if lower_text.contains(phrase) {
-            count += lower_text.matches(phrase).count();
-            flagged.push(phrase.to_string());
-        }
-    }
-
-    (count, flagged)
+    count_and_collect(text, &FILLER_HIGHLIGHT_REGEX)
 }
 
 pub fn check_ai_self_reference(text: &str) -> usize {
@@ -391,63 +577,15 @@ pub fn check_rule_of_three(text: &str) -> (usize, Vec<String>) {
 }
 
 pub fn check_promotional_language(text: &str) -> (usize, Vec<String>) {
-    let lower_text = text.to_lowercase();
-    let mut count = 0;
-    let mut flagged = Vec::new();
-
-    for phrase in PROMOTIONAL_WORDS.iter() {
-        if lower_text.contains(phrase) {
-            count += lower_text.matches(phrase).count();
-            flagged.push(phrase.to_string());
-        }
-    }
-
-    let hype_words = [
-        "exciting",
-        "innovative",
-        "cutting-edge",
-        "state-of-the-art",
-        "revolutionary",
-    ];
-    for word in hype_words.iter() {
-        let matches = lower_text.matches(word).count();
-        if matches > 0 {
-            count += matches;
-            flagged.push(word.to_string());
-        }
-    }
-
-    (count, flagged)
+    count_and_collect(text, &PROMOTIONAL_HIGHLIGHT_REGEX)
 }
 
 pub fn check_significance_emphasis(text: &str) -> (usize, Vec<String>) {
-    let lower_text = text.to_lowercase();
-    let mut count = 0;
-    let mut flagged = Vec::new();
-
-    for phrase in SIGNIFICANCE_PHRASES.iter() {
-        if lower_text.contains(phrase) {
-            count += lower_text.matches(phrase).count();
-            flagged.push(phrase.to_string());
-        }
-    }
-
-    (count, flagged)
+    count_and_collect(text, &SIGNIFICANCE_HIGHLIGHT_REGEX)
 }
 
 pub fn check_vague_attributions(text: &str) -> (usize, Vec<String>) {
-    let lower_text = text.to_lowercase();
-    let mut count = 0;
-    let mut flagged = Vec::new();
-
-    for phrase in VAGUE_ATTRIBUTIONS.iter() {
-        if lower_text.contains(phrase) {
-            count += lower_text.matches(phrase).count();
-            flagged.push(phrase.to_string());
-        }
-    }
-
-    (count, flagged)
+    count_and_collect(text, &VAGUE_HIGHLIGHT_REGEX)
 }
 
 pub fn check_formatting_artifacts(text: &str) -> (usize, Vec<String>) {
@@ -509,35 +647,11 @@ pub fn check_despite_pattern(text: &str) -> bool {
 }
 
 pub fn check_didactic_disclaimers(text: &str) -> (usize, Vec<String>) {
-    let lower_text = text.to_lowercase();
-    let mut count = 0;
-    let mut flagged = Vec::new();
-
-    for phrase in DIDACTIC_DISCLAIMERS.iter() {
-        let matches = lower_text.matches(phrase).count();
-        if matches > 0 {
-            count += matches;
-            flagged.push(phrase.to_string());
-        }
-    }
-
-    (count, flagged)
+    count_and_collect(text, &DIDACTIC_HIGHLIGHT_REGEX)
 }
 
 pub fn check_collaborative_comm(text: &str) -> (usize, Vec<String>) {
-    let lower_text = text.to_lowercase();
-    let mut count = 0;
-    let mut flagged = Vec::new();
-
-    for phrase in COLLABORATIVE_COMM.iter() {
-        let matches = lower_text.matches(phrase).count();
-        if matches > 0 {
-            count += matches;
-            flagged.push(phrase.to_string());
-        }
-    }
-
-    (count, flagged)
+    count_and_collect(text, &COLLABORATIVE_HIGHLIGHT_REGEX)
 }
 
 pub fn check_superficial_analyses(text: &str) -> usize {
@@ -577,35 +691,11 @@ pub fn check_chatgpt_artifacts(text: &str) -> usize {
 }
 
 pub fn check_copula_avoidance(text: &str) -> (usize, Vec<String>) {
-    let lower_text = text.to_lowercase();
-    let mut count = 0;
-    let mut flagged = Vec::new();
-
-    for phrase in COPULA_AVOIDANCE.iter() {
-        let matches = lower_text.matches(phrase).count();
-        if matches > 0 {
-            count += matches;
-            flagged.push(phrase.to_string());
-        }
-    }
-
-    (count, flagged)
+    count_and_collect(text, &COPULA_HIGHLIGHT_REGEX)
 }
 
 pub fn check_notability_emphasis(text: &str) -> (usize, Vec<String>) {
-    let lower_text = text.to_lowercase();
-    let mut count = 0;
-    let mut flagged = Vec::new();
-
-    for phrase in NOTABILITY_EMPHASIS.iter() {
-        let matches = lower_text.matches(phrase).count();
-        if matches > 0 {
-            count += matches;
-            flagged.push(phrase.to_string());
-        }
-    }
-
-    (count, flagged)
+    count_and_collect(text, &NOTABILITY_HIGHLIGHT_REGEX)
 }
 
 pub fn check_outline_conclusions(text: &str) -> usize {
